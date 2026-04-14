@@ -375,8 +375,16 @@ func Backup(pctx context.Context, jobInfo *files.JobInfo) error {
 
 	// Final Manifest Creation
 	group.Go(func() error {
-		// TODO: How to incorporate contexts in this go routine?
-		maniwg.Wait() // Wait until the ZFS send command has completed and all volumes have been uploaded to all backends.
+		maniDone := make(chan struct{})
+		go func() {
+			maniwg.Wait()
+			close(maniDone)
+		}()
+		select {
+		case <-maniDone:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 		zap.S().Infof("All volumes dispatched in pipeline, finalizing manifest file.")
 		manifestmutex.Lock()
 		jobInfo.EndTime = time.Now()
