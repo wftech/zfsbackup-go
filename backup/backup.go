@@ -170,6 +170,7 @@ func getBackupsForTarget(ctx context.Context, volume, target string, jobInfo *fi
 		zap.S().Errorf("Could not initialize backend due to error - %v.", berr)
 		return nil, berr
 	}
+	defer backend.Close()
 
 	// Get the local cache dir
 	localCachePath, cerr := getCacheDir(target)
@@ -191,7 +192,8 @@ func getBackupsForTarget(ctx context.Context, volume, target string, jobInfo *fi
 		manifestPath := filepath.Join(localCachePath, manifest)
 		decodedManifest, oerr := readManifest(ctx, manifestPath, jobInfo)
 		if oerr != nil {
-			return nil, oerr
+			zap.S().Warnf("Skipping corrupt manifest %s: %v", manifest, oerr)
+			continue
 		}
 		if strings.Compare(decodedManifest.VolumeName, volume) == 0 {
 			decodedManifests = append(decodedManifests, decodedManifest)

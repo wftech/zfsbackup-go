@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"path"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -133,7 +134,7 @@ func (s *SSHBackend) Init(ctx context.Context, conf *BackendConfig, opts ...Opti
 		return err
 	}
 
-	s.remotePath = strings.TrimSuffix(targetUrl.Path, "/")
+	s.remotePath = path.Clean(targetUrl.Path)
 	if s.remotePath == "" && targetUrl.Path != "/" { // allow root path
 		zap.S().Errorf("ssh backend: No remote path provided!")
 		return ErrInvalidURI
